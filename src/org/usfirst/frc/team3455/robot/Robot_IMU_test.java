@@ -1,4 +1,4 @@
-package org.usfirst.frc.team3455.robot;
+	package org.usfirst.frc.team3455.robot;
 
 import org.opencv.core.Mat;
 import org.opencv.imgproc.Imgproc;
@@ -26,7 +26,7 @@ import edu.wpi.first.wpilibj.Encoder;
  * the FRC PC Dashboard.
  */
 
-public class Robot extends IterativeRobot {
+public class Robot_IMU_test extends IterativeRobot {
 	
 	Encoder encoder;
 	NetworkTable table;
@@ -153,7 +153,7 @@ public class Robot extends IterativeRobot {
 			if(first.getRawButton(1)) {
 				intakeFlag = !intakeFlag;
 			}
-			
+			/*
 			if(first.getRawButton(6) && first.getRawButton(7) && Robot.allowOperator) {
 				Thread cameraThread = new Thread(() -> {
 					Robot.allowOperator = false;
@@ -225,7 +225,7 @@ public class Robot extends IterativeRobot {
 					cameraThread.start();
 				}
 			}			
-			
+			*/
 			if(shooterFlag) {
 				shooterMotor.set(0.75);
 				feederMotor.set(0.75);

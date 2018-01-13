@@ -148,7 +148,7 @@ public class Robot extends IterativeRobot {
 			if(first.getRawButton(1)) {
 				intakeFlag = !intakeFlag;
 			}
-			
+			/*
 			if(first.getRawButton(6) && first.getRawButton(7) && Robot.allowOperator) {
 				Thread cameraThread = new Thread(() -> {
 					Robot.allowOperator = false;
@@ -220,7 +220,7 @@ public class Robot extends IterativeRobot {
 					cameraThread.start();
 				}
 			}			
-			
+			*/
 			if(shooterFlag) {
 				shooterMotor.set(0.75);
 				feederMotor.set(0.75);

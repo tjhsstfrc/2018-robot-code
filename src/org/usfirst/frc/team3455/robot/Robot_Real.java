@@ -1,4 +1,4 @@
-	package org.usfirst.frc.team3455.robot;
+package org.usfirst.frc.team3455.robot;
 
 import org.opencv.core.Mat;
 import org.opencv.imgproc.Imgproc;
@@ -26,7 +26,7 @@ import edu.wpi.first.wpilibj.Encoder;
  * the FRC PC Dashboard.
  */
 
-public class Robot_IMU_test extends IterativeRobot {
+public class Robot_Real extends IterativeRobot {
 	
 	Encoder encoder;
 	NetworkTable table;
@@ -67,8 +67,6 @@ public class Robot_IMU_test extends IterativeRobot {
 	
 	// update every 5 milliseconds
 	double kUpdatePeriod = 0.005;
-
-	private static BNO055 imu;
 	
 	public void robotInit() {
 		
@@ -110,9 +108,6 @@ public class Robot_IMU_test extends IterativeRobot {
 		
 		frontLeft.setInverted(true);
 		backLeft.setInverted(true);
-
-		imu = BNO055.getInstance(BNO055.opmode_t.OPERATION_MODE_IMUPLUS,
-				BNO055.vector_type_t.VECTOR_EULER);
 		
 		
 	}
@@ -121,12 +116,19 @@ public class Robot_IMU_test extends IterativeRobot {
 		encoder.reset();
 	}
 	
+	boolean goForward = true;
 	public void autonomousPeriodic() {
 		table.putNumber("encoder", encoder.getDistance());
-		if(encoder.getDistance() < getEncoderValue(6.0)) {
+		if(goForward == true){
 			tankDrive(-0.3, -0.3);
-		} else {
-			tankDrive(0.0, 0.0);
+		}else{
+			tankDrive(0.3, 0.3);
+		}
+		
+		if(encoder.getDistance() < getEncoderValue(0.0)) {
+			goForward = true;
+		}else if(encoder.getDistance() > getEncoderValue(2.0)){
+			goForward = false;
 		}
 		
 	}
@@ -300,69 +302,6 @@ public class Robot_IMU_test extends IterativeRobot {
 	
 	public double getEncoderValue(double feet) {
 		return feet / WHEEL_CIRCUM;
-	}
-
-
-	//.
-	//..
-	//...
-	//EXPERIMENTAL IMU CODE
-
-	// public double imuTest() {
-    // 	return imu.;
-    // }
-
-	public double getHeading() {
-    	return imu.getHeading();
-    }
-    
-    /**
-     * Gets a vector representing the sensors position (heading, roll, pitch).
-	 * heading:    0 to 360 degrees
-	 * roll:     -90 to +90 degrees
-	 * pitch:   -180 to +180 degrees
-	 *
-	 * For continuous rotation heading (doesn't roll over between 360/0) see
-	 *   the getHeading() method.
-	 *
-	 * @return a vector [heading, roll, pitch]
-	 */
-    public double[] getVector() {
-    	return imu.getVector();
-    }
-    
-	/**
-	 * @return true if the IMU is found on the I2C bus
-	 */
-	public boolean isSensorPresent() {
-		return imu.isSensorPresent();
-	}
-
-	/** 
-	 * @return true when the IMU is initialized.
-	 */
-	public boolean isInitialized() {
-		return imu.isInitialized();
-	}
-	
-	/**
-	 * Gets current IMU calibration state.
-	 * @return each value will be set to 0 if not calibrated, 3 if fully
-	 *   calibrated.
-	 */
-	public BNO055.CalData getCalibration() {
-		return imu.getCalibration();
-	}
-	
-	/**
-	 * Returns true if all required sensors (accelerometer, magnetometer,
-	 *   gyroscope) in the IMU have completed their respective calibration
-	 *   sequence.
-	 * @return true if calibration is complete for all sensors required for the
-	 *   mode the sensor is currently operating in. 
-	 */
-	public boolean isCalibrated() {
-		return imu.isCalibrated();
 	}
 
 }

@@ -119,6 +119,9 @@ public class Robot extends IterativeRobot {
 	
 	double offsetIMU = 0.0;
 	boolean errorIMU = false;
+	double startHeading = 0.0;
+	final double IMU_THRESHOLD = 1.0;
+
 	public void autonomousInit() {
 		long startAutoTime = System.currentTimeMillis();
 		encoder.reset();
@@ -135,26 +138,41 @@ public class Robot extends IterativeRobot {
 			offsetIMU = imu.getHeading();
 			System.out.println("START: "+(imu.getHeading()));
 			System.out.println("START WITH OFFSET: "+(imu.getHeading()-offsetIMU));
+			startHeading = imu.getHeading()-offsetIMU;
 		}
 	}
 	
+	final double CORRECTION_MULTIPLIER = 0.01;
+	double autoStraightSpeed = 0.5;
+	double leftSpeedAdj, rightSpeedAdj;
+	double adjustVar;
+
 	public void autonomousPeriodic() {
-		table.putNumber("encoder", encoder.getDistance());
-//		if(encoder.getDistance() < getEncoderValue(6.0)) {
-//			tankDrive(-0.3, -0.3);
-//		} else {
-//			tankDrive(0.0, 0.0);
-//		}
-		
-		table.putNumber("HEADING w/ OFFSET", imu.getHeading()-offsetIMU);
-		//mod 360 because imu is continuous value
-		if((imu.getHeading()-offsetIMU)%360<90.0){
-			tankDrive(-0.6, 0.6);
-			System.out.println("no offset: "+(imu.getHeading()));
-			System.out.println("with offset: "+(imu.getHeading()-offsetIMU));
+		leftSpeedAdj = autoStraightSpeed;
+		rightSpeedAdj = autoStraightSpeed;
+
+		if(imu.getHeading() -offsetIMU - startHeading > IMU_THRESHOLD){
+			adjustVar = Math.abs(imu.getHeading() -offsetIMU - startHeading);
+			rightSpeedAdj += CORRECTION_MULTIPLIER * adjustVar;
+		}else if(imu.getHeading() -offsetIMU - startHeading < -IMU_THRESHOLD){
+			adjustVar = Math.abs(imu.getHeading() -offsetIMU - startHeading);
+			leftSpeedAdj += CORRECTION_MULTIPLIER * adjustVar;
 		}else{
-			tankDrive(0, 0);
+			//robot is driving within acceptable range
+			table.putNumber("STRAIGHT LINE CORRECTION: ", 0);
 		}
+
+		tankDrive(leftSpeedAdj, rightSpeedAdj);
+
+		// table.putNumber("HEADING w/ OFFSET", imu.getHeading()-offsetIMU);
+		// //mod 360 because imu is continuous value
+		// if((imu.getHeading()-offsetIMU)%360<90.0){
+		// 	tankDrive(-0.6, 0.6);
+		// 	System.out.println("no offset: "+(imu.getHeading()));
+		// 	System.out.println("with offset: "+(imu.getHeading()-offsetIMU));
+		// }else{
+		// 	tankDrive(0, 0);
+		// }
 		
 	}
 

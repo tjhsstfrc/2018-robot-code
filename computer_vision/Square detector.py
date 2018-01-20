@@ -1,3 +1,9 @@
+
+# Made By Jacob Consalvi, and uploaded at 1/20/18 for the TJHSST First Robotics Team
+#Power Cube recognition and tracking
+'''When the button a is pressed, the program goutputs the distance to the power cube in feet, the angle from the normal to the robot in radians, 
+ and the  distance from center  in inches as an array.'''
+
 import sys
 import serial
 PY3 = sys.version_info[0] == 3
@@ -47,7 +53,7 @@ cap = cv.VideoCapture(2)
 #cap = cv.VideoCapture('POWER Cube Test Video.mp4')
 '''try:
     while(1):
-        frame = cap.read()
+        _,frame = cap.read()
 
         imgOR = frame
         imgOR = cv.resize(imgOR, (640,480))
@@ -174,6 +180,8 @@ while(1):
             print(DistanceFEET,theta,distanceFromCenterINCH)
             print(ser.name)    
             ser.write('Test')
+            ser.write(DistanceFEET,theta,distanceFromCenterINCH)
+            
     bytesRead = len(ser.read(10)) 
     if bytesRead >0 :
         IN = ser.read(bytesRead)

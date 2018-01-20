@@ -120,7 +120,7 @@ public class Robot extends IterativeRobot {
 	double offsetIMU = 0.0;
 	boolean errorIMU = false;
 	double startHeading = 0.0;
-	final double IMU_THRESHOLD = 1.0;
+	final double IMU_THRESHOLD = 0.5;
 
 	public void autonomousInit() {
 		long startAutoTime = System.currentTimeMillis();
@@ -142,28 +142,36 @@ public class Robot extends IterativeRobot {
 		}
 	}
 	
-	final double CORRECTION_MULTIPLIER = 0.01;
-	double autoStraightSpeed = 0.5;
+	//might make it scale logarithmically in the future
+	final double CORRECTION_MULTIPLIER = 0.075;
+	final double LEFT_COEFF = 0.4;
+	final double RIGHT_COEFF = 1.0;
+	final double CORRECTION_ADD = 0.0;
+	double autoStraightSpeed = -0.4;
 	double leftSpeedAdj, rightSpeedAdj;
 	double adjustVar;
 
 	public void autonomousPeriodic() {
-		leftSpeedAdj = autoStraightSpeed;
-		rightSpeedAdj = autoStraightSpeed;
+		leftSpeedAdj = autoStraightSpeed*LEFT_COEFF;
+		rightSpeedAdj = autoStraightSpeed*RIGHT_COEFF;
 
 		if(imu.getHeading() -offsetIMU - startHeading > IMU_THRESHOLD){
 			adjustVar = Math.abs(imu.getHeading() -offsetIMU - startHeading);
-			rightSpeedAdj += CORRECTION_MULTIPLIER * adjustVar;
+			rightSpeedAdj -= CORRECTION_MULTIPLIER * adjustVar;
+			table.putNumber("STRAIGHT LINE CORRECTION RIGHT: ", rightSpeedAdj);
 		}else if(imu.getHeading() -offsetIMU - startHeading < -IMU_THRESHOLD){
 			adjustVar = Math.abs(imu.getHeading() -offsetIMU - startHeading);
-			leftSpeedAdj += CORRECTION_MULTIPLIER * adjustVar;
+			leftSpeedAdj -= CORRECTION_MULTIPLIER * adjustVar;
+			table.putNumber("STRAIGHT LINE CORRECTION LEFT: ", leftSpeedAdj);
 		}else{
 			//robot is driving within acceptable range
 			table.putNumber("STRAIGHT LINE CORRECTION: ", 0);
 		}
-
-		tankDrive(leftSpeedAdj, rightSpeedAdj);
-
+		table.putNumber("imu heading: ", imu.getHeading());
+		table.putNumber("final left speed: ", leftSpeedAdj);
+		table.putNumber("final right speed: ", rightSpeedAdj);
+		table.putNumber("current adjust state: ", imu.getHeading() -offsetIMU - startHeading);
+		tankDriveNoThresh(leftSpeedAdj, rightSpeedAdj);
 		// table.putNumber("HEADING w/ OFFSET", imu.getHeading()-offsetIMU);
 		// //mod 360 because imu is continuous value
 		// if((imu.getHeading()-offsetIMU)%360<90.0){
@@ -297,12 +305,28 @@ public class Robot extends IterativeRobot {
     		tankDrive(yAxis1, yAxis2);
     		
     		table.putNumber("imu heading", imu.getHeading());
+    		table.putNumber("yaxis2", yAxis2);
     		
     		Timer.delay(0.01);
     		// wait to avoid hogging CPU cycles
 		}
 	}
 
+	public void tankDriveNoThresh(double leftValue, double rightValue) {
+
+		// square the inputs (while preserving the sign) to increase fine
+		// control while permitting
+		// full power
+		leftValue = limit((leftValue));
+		rightValue = limit((rightValue));
+		
+		frontLeft.set(leftValue);
+		backLeft.set(leftValue);
+		frontRight.set(rightValue);
+		backRight.set(rightValue);
+		
+	}
+	
 	public void tankDrive(double leftValue, double rightValue) {
 
 		// square the inputs (while preserving the sign) to increase fine

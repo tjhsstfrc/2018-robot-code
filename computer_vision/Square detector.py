@@ -4,22 +4,27 @@
 '''When the button a is pressed, the program goutputs the distance to the power cube in feet, the angle from the normal to the robot in radians, 
  and the  distance from center  in inches as an array.'''
 
+from networktables import NetworkTables as NT
+#robotIP = 10.34.55.2
 import sys
 import serial
 PY3 = sys.version_info[0] == 3
-ser = serial.Serial()
+import numpy as np
+import cv2 as cv
+import math
+'''ser = serial.Serial()
 ser.port = 'USB\VID_3923&PID_762F\\03060EF6'
 
 ser.baudrate = 9600
 ser.timeout = 0
-ser.open()
+ser.open()''' #This is the code sor the rs-232 serial conection
+
+
 
 if PY3:
     xrange = range
 
-import numpy as np
-import cv2 as cv
-import math
+
 
 
 def angle_cos(p0, p1, p2):
@@ -129,7 +134,7 @@ cap = cv.VideoCapture(2)
 except:
     print('')
     pass'''
-
+NT.initialize(server = '10.34.55.2')
 while(1):
     _, frame = cap.read()
 
@@ -178,9 +183,12 @@ while(1):
         #print(pixelDistanceINCH)
         if cv.waitKey(33) == ord('a'):
             print(DistanceFEET,theta,distanceFromCenterINCH)
-            print(ser.name)    
-            ser.write('Test')
-            ser.write(DistanceFEET,theta,distanceFromCenterINCH)
+            table.putNumber('d1', DistanceFEET)
+            table.putNumber('theta', theta)
+            table.putNumber('d2', distanceFromCenterINCH)
+            #print(ser.name)    
+            #ser.write('Test')
+            #ser.write(DistanceFEET,theta,distanceFromCenterINCH)
             
     bytesRead = len(ser.read(10)) 
     if bytesRead >0 :

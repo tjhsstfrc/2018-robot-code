@@ -324,12 +324,10 @@ public class Robot extends IterativeRobot {
     		
     		dashboardTable.putNumber("imu heading", imu.getHeading());
 			dashboardTable.putNumber("yaxis2", yAxis2);
-			
-			cameraTable.beginTransaction();
+
 			blockd1 = cameraTable.getDouble("d1", -3455);
 			blockd2 = cameraTable.getDouble("d2", -3455);
 			blockTheta = cameraTable.getDouble("theta", -3455);
-			cameraTable.endTransaction();
 
 			dashboardTable.putNumber("D1 of BLOCK: ", blockd1);
 			dashboardTable.putNumber("D2 of BLOCK: ", blockd2);

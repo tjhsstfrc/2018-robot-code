@@ -190,10 +190,10 @@ while(1):
             #ser.write('Test')
             #ser.write(DistanceFEET,theta,distanceFromCenterINCH)
             
-    bytesRead = len(ser.read(10)) 
-    if bytesRead >0 :
-        IN = ser.read(bytesRead)
-        print(IN)
+    #bytesRead = len(ser.read(10)) 
+   # if bytesRead >0 :
+       # IN = ser.read(bytesRead)
+       # print(IN)
 
     cv.drawContours( imgOR, squares, -1, (0, 255, 0), 3 )
     #if squares != []:

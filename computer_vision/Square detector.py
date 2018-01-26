@@ -1,4 +1,4 @@
-
+from __future__ import print_function
 # Made By Jacob Consalvi, and uploaded at 1/20/18 for the TJHSST First Robotics Team
 #Power Cube recognition and tracking
 '''When the button a is pressed, the program goutputs the distance to the power cube in feet, the angle from the normal to the robot in radians, 
@@ -12,6 +12,10 @@ PY3 = sys.version_info[0] == 3
 import numpy as np
 import cv2 as cv
 import math
+from imutils.video import WebcamVideoStream
+from imutils.video import FPS
+import argparse
+import imutils
 '''ser = serial.Serial()
 ser.port = 'USB\VID_3923&PID_762F\\03060EF6'
 
@@ -23,9 +27,6 @@ ser.open()''' #This is the code sor the rs-232 serial conection
 
 if PY3:
     xrange = range
-
-
-
 
 def angle_cos(p0, p1, p2):
     d1, d2 = (p0-p1).astype('float'), (p2-p1).astype('float')
@@ -53,93 +54,17 @@ def find_squares(img):
                         squares.append(cnt)
     return squares
 
-
-cap = cv.VideoCapture(0)
-#cap = cv.VideoCapture('POWER Cube Test Video.mp4')
-'''try:
-    while(1):
-        _,frame = cap.read()
-
-        imgOR = frame
-        imgOR = cv.resize(imgOR, (640,480))
-
-        hsv = cv.cvtColor(imgOR, cv.COLOR_BGR2HSV)
-        centerx = 0
-  
-        lower_Yellow = np.array([5,110,120])
-        upper_Yellow = np.array([90,255,255])
-    
-        mask = cv.inRange(imgOR, lower_Yellow, upper_Yellow)
-        res = cv.bitwise_and(imgOR,imgOR, mask= mask)
-
-        squares = find_squares(res)
-        theta = 0
-        DistanceFEET = 0
-        distanceFromCenterINCH = 0
-        if squares != []:        
-            centerx = round((squares[0][0][0] + squares[0][3][0] + squares[0][1][0]+squares[0][2][0])/4)
-            centery = round((squares[0][0][1] + squares[0][3][1] + squares[0][1][1]+squares[0][2][1])/4)
-
-            BottomSideLength = abs(round(squares[0][0][0]) - round(squares[0][2][0]))   
-            DistanceINCH = 8028/BottomSideLength
-            DistanceFEET = DistanceINCH/12
-
-            center = [int(centerx),int(centery)]
-        
-            distanceFromCenterPixels = (centerx-320)
-            pixelDistanceINCH = 13/BottomSideLength
-            pixelDistanceFEET = pixelDistanceINCH/12
-            distanceFromCenterINCH = pixelDistanceINCH*distanceFromCenterPixels
-            distanceFromCenterINCHoffset = distanceFromCenterINCH - 2.5
-            distanceFromCenterFEET = distanceFromCenterINCH/12
-            theta = math.asin(distanceFromCenterINCH/DistanceINCH)
-        
-            font = cv.FONT_HERSHEY_SIMPLEX        
-            cv.putText(imgOR,'CENTER',(center[0],center[1]),font,2,(0,255,0),1,cv.LINE_AA)
-            cv.circle(imgOR,(center[0],center[1]),3,(0,255,0),-1)
-            cv.circle(imgOR,(320,240),5,(255,255,255),-1)
-
-    
-
-            #print('Distance Away in feet: ', DistanceFEET, 'horizontal distance from center in inchs: ', distanceFromCenterINCH, 'Angle: ', theta)
-            #print(pixelDistanceINCH)
-            if cv.waitKey(33) == ord('a'):
-                print(DistanceFEET,theta,distanceFromCenterINCH)
-                print(ser.name)    
-                ser.write('Test')
-        bytesRead = len(ser.read(10)) 
-        if bytesRead >0 :
-            IN = ser.read(bytesRead)
-            print(IN)
-
-        cv.drawContours( imgOR, squares, -1, (0, 255, 0), 3 )
-        #if squares != []:
-            #cv.circle(imgOR,(squares[0][0][0],squares[0][0][1]),5,(225,0,0),-1)
-            #cv.circle(imgOR,(squares[0][3][0],squares[0][3][1]),5,(225,0,0),-1)
-        
-        cv.imshow('squares', imgOR)
-        cv.imshow('Mask', res)
-
-
-
-
-        k = cv.waitKey(5)
-        if k == 27:
-            break
-
-
-    #cv.destroyAllWindows()
-    #cap.release()
-
-except:
-    print('')
-    pass'''
 NT.initialize(server = '10.34.55.2')
+vs = WebcamVideoStream(src=0).start()
+fps = FPS().start()
 while(1):
-    _, frame = cap.read()
 
-    imgOR = frame
-    imgOR = cv.resize(imgOR, (640,480))
+    #print("hello")
+    frame = vs.read()
+    #print(frame)
+    imgOR = imutils.resize(frame, width=640)
+    #imgOR = frame
+    #imgOR = cv.resize(imgOR, (640,480))
 
     hsv = cv.cvtColor(imgOR, cv.COLOR_BGR2HSV)
     centerx = 0
@@ -179,8 +104,9 @@ while(1):
 
     
 
-        #print('Distance Away in feet: ', DistanceFEET, 'horizontal distance from center in inchs: ', distanceFromCenterINCH, 'Angle: ', theta)
-        #print(pixelDistanceINCH)
+        print('Distance Away in feet: ', DistanceFEET, 'horizontal distance from center in inchs: ', distanceFromCenterINCH, 'Angle: ', theta)
+        print(pixelDistanceINCH)
+        '''
         if cv.waitKey(33) == ord('a'):
             table = NT.getTable("PIcamera")
             print(DistanceFEET,theta,distanceFromCenterINCH)
@@ -190,7 +116,7 @@ while(1):
             print("thing")    
             #ser.write('Test')
             #ser.write(DistanceFEET,theta,distanceFromCenterINCH)
-            
+        ''' 
     #bytesRead = len(ser.read(10)) 
    # if bytesRead >0 :
        # IN = ser.read(bytesRead)
@@ -201,15 +127,15 @@ while(1):
         #cv.circle(imgOR,(squares[0][0][0],squares[0][0][1]),5,(225,0,0),-1)
         #cv.circle(imgOR,(squares[0][3][0],squares[0][3][1]),5,(225,0,0),-1)
         
-    cv.imshow('squares', imgOR)
-    cv.imshow('Mask', res)
+    #cv.imshow('squares', imgOR)
+    #cv.imshow('Mask', res)
 
 
 
 
-    k = cv.waitKey(5)
-    if k == 27:
-        break
+    #k = cv.waitKey(5)
+    #if k == 27:
+    #    break
 
 
 cv.destroyAllWindows()

@@ -164,32 +164,101 @@ public class Robot extends IterativeRobot {
 	double leftSpeedAdj, rightSpeedAdj;
 	double adjustVar;
 
+	final double TURN_CORRECTION = 0.005;
+	double autoTurnSpeed = 0.4;
+	double MIN_TURN_LIMIT = 0.3;
+
+
 	//camera vars from networktable
 	double blockd1 = -3455;
 	double blockd2 = -3455;
 	double blockTheta = -3455;
 
-	public void autonomousPeriodic() {
-		leftSpeedAdj = autoStraightSpeed*LEFT_COEFF;
-		rightSpeedAdj = autoStraightSpeed*RIGHT_COEFF;
+	final double BLOCK_ANGLE_THRESHOLD = 5; //degrees
 
-		if(imu.getHeading() -offsetIMU - startHeading > IMU_THRESHOLD){
-			adjustVar = Math.abs(imu.getHeading() -offsetIMU - startHeading);
-			rightSpeedAdj -= CORRECTION_MULTIPLIER * adjustVar;
-			dashboardTable.putNumber("STRAIGHT LINE CORRECTION RIGHT: ", rightSpeedAdj);
-		}else if(imu.getHeading() -offsetIMU - startHeading < -IMU_THRESHOLD){
-			adjustVar = Math.abs(imu.getHeading() -offsetIMU - startHeading);
-			leftSpeedAdj -= CORRECTION_MULTIPLIER * adjustVar;
-			dashboardTable.putNumber("STRAIGHT LINE CORRECTION LEFT: ", leftSpeedAdj);
+	//FINISHED check vars
+	boolean finished1 = false;
+	boolean finished2 = false;
+
+	public void autonomousPeriodic() {
+		dashboardTable.putNumber("imu heading", imu.getHeading());
+		dashboardTable.putNumber("yaxis2", yAxis2);
+
+		blockd1 = cameraTable.getDouble("d1", -3455);
+		blockd2 = cameraTable.getDouble("d2", -3455);
+		blockTheta = cameraTable.getDouble("theta", -3455);
+
+		dashboardTable.putNumber("D1 of BLOCK: ", blockd1);
+		dashboardTable.putNumber("D2 of BLOCK: ", blockd2);
+		dashboardTable.putNumber("THETA of BLOCK: ", blockTheta);
+
+		if(!finished1){
+			table.putNumber("HEADING w/ OFFSET", imu.getHeading()-offsetIMU);
+			//mod 360 because imu is continuous value
+			if((imu.getHeading()-offsetIMU)%360<90.0){
+				autoTurnSpeed = (90-(imu.getHeading()-offsetIMU)%360)*TURN_CORRECTION+MIN_TURN_LIMIT;
+				tankDrive(-autoTurnSpeed, autoTurnSpeed);
+			}else{
+				tankDrive(0, 0);
+				finished1 = true;
+			}
+		}else if(!finished2){
+			leftSpeedAdj = autoStraightSpeed*LEFT_COEFF;
+			rightSpeedAdj = autoStraightSpeed*RIGHT_COEFF;
+	
+			if(imu.getHeading() -offsetIMU - startHeading > IMU_THRESHOLD){
+				adjustVar = Math.abs(imu.getHeading() -offsetIMU - startHeading);
+				rightSpeedAdj -= CORRECTION_MULTIPLIER * adjustVar;
+				dashboardTable.putNumber("STRAIGHT LINE CORRECTION RIGHT: ", rightSpeedAdj);
+			}else if(imu.getHeading() -offsetIMU - startHeading < -IMU_THRESHOLD){
+				adjustVar = Math.abs(imu.getHeading() -offsetIMU - startHeading);
+				leftSpeedAdj -= CORRECTION_MULTIPLIER * adjustVar;
+				dashboardTable.putNumber("STRAIGHT LINE CORRECTION LEFT: ", leftSpeedAdj);
+			}else{
+				//robot is driving within acceptable range
+				dashboardTable.putNumber("STRAIGHT LINE CORRECTION: ", 0);
+			}
+			dashboardTable.putNumber("imu heading: ", imu.getHeading());
+			dashboardTable.putNumber("final left speed: ", leftSpeedAdj);
+			dashboardTable.putNumber("final right speed: ", rightSpeedAdj);
+			dashboardTable.putNumber("current adjust state: ", imu.getHeading() -offsetIMU - startHeading);
+			tankDriveNoThresh(leftSpeedAdj, rightSpeedAdj);
+
+			if(Math.abs(blockTheta) < BLOCK_ANGLE_THRESHOLD){
+				tankDriveNoThresh(0, 0);
+				finished2 = true;
+			}
 		}else{
-			//robot is driving within acceptable range
-			dashboardTable.putNumber("STRAIGHT LINE CORRECTION: ", 0);
+			//all done!
 		}
-		dashboardTable.putNumber("imu heading: ", imu.getHeading());
-		dashboardTable.putNumber("final left speed: ", leftSpeedAdj);
-		dashboardTable.putNumber("final right speed: ", rightSpeedAdj);
-		dashboardTable.putNumber("current adjust state: ", imu.getHeading() -offsetIMU - startHeading);
-		tankDriveNoThresh(leftSpeedAdj, rightSpeedAdj);
+
+		//CODE TO DRIVE STRAIGHT
+
+		// leftSpeedAdj = autoStraightSpeed*LEFT_COEFF;
+		// rightSpeedAdj = autoStraightSpeed*RIGHT_COEFF;
+
+		// if(imu.getHeading() -offsetIMU - startHeading > IMU_THRESHOLD){
+		// 	adjustVar = Math.abs(imu.getHeading() -offsetIMU - startHeading);
+		// 	rightSpeedAdj -= CORRECTION_MULTIPLIER * adjustVar;
+		// 	dashboardTable.putNumber("STRAIGHT LINE CORRECTION RIGHT: ", rightSpeedAdj);
+		// }else if(imu.getHeading() -offsetIMU - startHeading < -IMU_THRESHOLD){
+		// 	adjustVar = Math.abs(imu.getHeading() -offsetIMU - startHeading);
+		// 	leftSpeedAdj -= CORRECTION_MULTIPLIER * adjustVar;
+		// 	dashboardTable.putNumber("STRAIGHT LINE CORRECTION LEFT: ", leftSpeedAdj);
+		// }else{
+		// 	//robot is driving within acceptable range
+		// 	dashboardTable.putNumber("STRAIGHT LINE CORRECTION: ", 0);
+		// }
+		// dashboardTable.putNumber("imu heading: ", imu.getHeading());
+		// dashboardTable.putNumber("final left speed: ", leftSpeedAdj);
+		// dashboardTable.putNumber("final right speed: ", rightSpeedAdj);
+		// dashboardTable.putNumber("current adjust state: ", imu.getHeading() -offsetIMU - startHeading);
+		// tankDriveNoThresh(leftSpeedAdj, rightSpeedAdj);
+
+
+
+		//CODE TO TURN USING IMU
+
 		// table.putNumber("HEADING w/ OFFSET", imu.getHeading()-offsetIMU);
 		// //mod 360 because imu is continuous value
 		// if((imu.getHeading()-offsetIMU)%360<90.0){

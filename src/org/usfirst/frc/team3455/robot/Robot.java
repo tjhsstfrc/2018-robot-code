@@ -137,6 +137,13 @@ public class Robot extends IterativeRobot {
 
 	public void autonomousInit() {
 		long startAutoTime = System.currentTimeMillis();
+		
+		finished1 = true;
+		finished2 = false;
+		finished3 = false;
+		finished4 = false;
+		System.out.println("finished 1: "+finished1);
+		System.out.println("finished 2: "+finished2);
 		//encoder.reset();
 //		readyIMU: while(!imu.isCalibrated()||!imu.isInitialized()){
 //			if(System.currentTimeMillis()-startAutoTime>5000){ //temporary timeout time for init and calibrating the imu, might change later to less lenient
@@ -160,7 +167,8 @@ public class Robot extends IterativeRobot {
 	final double LEFT_COEFF = 0.4;
 	final double RIGHT_COEFF = 1.0;
 	final double CORRECTION_ADD = 0.0;
-	double autoStraightSpeed = -0.4;
+	double autoStraightSpeed = -0.6; //-0.4
+	double autoStraightSpeedPrecise = -0.4; //-0.4
 	double leftSpeedAdj, rightSpeedAdj;
 	double adjustVar;
 
@@ -174,13 +182,19 @@ public class Robot extends IterativeRobot {
 	double blockd2 = -3455;
 	double blockTheta = -3455;
 
-	final double BLOCK_ANGLE_THRESHOLD = 5; //degrees
+	final double BLOCK_ANGLE_THRESHOLD = 15;//inches lmao
+	final double BLOCK_ANGLE_THRESHOLD_PRECISE = 5;
 
 	//FINISHED check vars
-	boolean finished1 = false;
+	boolean finished1 = true;
 	boolean finished2 = false;
+	boolean finished3 = false;
+	boolean finished4 = false;
 
 	public void autonomousPeriodic() {
+		System.out.println("finished 1: "+finished1);
+		System.out.println("finished 2: "+finished2);
+		
 		dashboardTable.putNumber("imu heading", imu.getHeading());
 		dashboardTable.putNumber("yaxis2", yAxis2);
 
@@ -193,7 +207,7 @@ public class Robot extends IterativeRobot {
 		dashboardTable.putNumber("THETA of BLOCK: ", blockTheta);
 
 		if(!finished1){
-			table.putNumber("HEADING w/ OFFSET", imu.getHeading()-offsetIMU);
+			dashboardTable.putNumber("HEADING w/ OFFSET", imu.getHeading()-offsetIMU);
 			//mod 360 because imu is continuous value
 			if((imu.getHeading()-offsetIMU)%360<90.0){
 				autoTurnSpeed = (90-(imu.getHeading()-offsetIMU)%360)*TURN_CORRECTION+MIN_TURN_LIMIT;
@@ -224,9 +238,45 @@ public class Robot extends IterativeRobot {
 			dashboardTable.putNumber("current adjust state: ", imu.getHeading() -offsetIMU - startHeading);
 			tankDriveNoThresh(leftSpeedAdj, rightSpeedAdj);
 
-			if(Math.abs(blockTheta) < BLOCK_ANGLE_THRESHOLD){
-				tankDriveNoThresh(0, 0);
+			if(blockTheta!=-3455 && Math.abs(blockd2) < BLOCK_ANGLE_THRESHOLD){
+				tankDriveNoThresh(0.0, 0.0);
 				finished2 = true;
+			}
+		}else if(!finished3){
+			leftSpeedAdj = autoStraightSpeedPrecise*LEFT_COEFF;
+			rightSpeedAdj = autoStraightSpeedPrecise*RIGHT_COEFF;
+	
+			if(imu.getHeading() -offsetIMU - startHeading > IMU_THRESHOLD){
+				adjustVar = Math.abs(imu.getHeading() -offsetIMU - startHeading);
+				rightSpeedAdj -= CORRECTION_MULTIPLIER * adjustVar;
+				dashboardTable.putNumber("STRAIGHT LINE CORRECTION RIGHT: ", rightSpeedAdj);
+			}else if(imu.getHeading() -offsetIMU - startHeading < -IMU_THRESHOLD){
+				adjustVar = Math.abs(imu.getHeading() -offsetIMU - startHeading);
+				leftSpeedAdj -= CORRECTION_MULTIPLIER * adjustVar;
+				dashboardTable.putNumber("STRAIGHT LINE CORRECTION LEFT: ", leftSpeedAdj);
+			}else{
+				//robot is driving within acceptable range
+				dashboardTable.putNumber("STRAIGHT LINE CORRECTION: ", 0);
+			}
+			dashboardTable.putNumber("imu heading: ", imu.getHeading());
+			dashboardTable.putNumber("final left speed: ", leftSpeedAdj);
+			dashboardTable.putNumber("final right speed: ", rightSpeedAdj);
+			dashboardTable.putNumber("current adjust state: ", imu.getHeading() -offsetIMU - startHeading);
+			tankDriveNoThresh(-leftSpeedAdj, -rightSpeedAdj);
+
+			if(blockTheta!=-3455 && Math.abs(blockd2) < BLOCK_ANGLE_THRESHOLD_PRECISE){
+				tankDriveNoThresh(0.0, 0.0);
+				finished3 = true;
+			}
+		}else if(!finished4){
+			dashboardTable.putNumber("HEADING w/ OFFSET", imu.getHeading()-offsetIMU);
+			//mod 360 because imu is continuous value
+			if((imu.getHeading()-offsetIMU)%360<90.0){
+				autoTurnSpeed = (90-(imu.getHeading()-offsetIMU)%360)*TURN_CORRECTION+MIN_TURN_LIMIT;
+				tankDrive(-autoTurnSpeed, autoTurnSpeed);
+			}else{
+				tankDrive(0, 0);
+				finished1 = true;
 			}
 		}else{
 			//all done!

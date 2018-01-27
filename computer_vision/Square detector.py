@@ -54,7 +54,7 @@ def find_squares(img):
     return squares
 
 
-cap = cv.VideoCapture(2)
+cap = cv.VideoCapture(0)
 #cap = cv.VideoCapture('POWER Cube Test Video.mp4')
 '''try:
     while(1):
@@ -182,11 +182,12 @@ while(1):
         #print('Distance Away in feet: ', DistanceFEET, 'horizontal distance from center in inchs: ', distanceFromCenterINCH, 'Angle: ', theta)
         #print(pixelDistanceINCH)
         if cv.waitKey(33) == ord('a'):
+            table = NT.getTable("PIcamera")
             print(DistanceFEET,theta,distanceFromCenterINCH)
             table.putNumber('d1', DistanceFEET)
             table.putNumber('theta', theta)
             table.putNumber('d2', distanceFromCenterINCH)
-            #print(ser.name)    
+            print("thing")    
             #ser.write('Test')
             #ser.write(DistanceFEET,theta,distanceFromCenterINCH)
             

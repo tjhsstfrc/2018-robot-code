@@ -17,7 +17,7 @@ import edu.wpi.first.wpilibj.Talon;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.interfaces.Accelerometer;
 import edu.wpi.first.wpilibj.networktables.NetworkTable;
-//import edu.wpi.first.wpilibj.//encoder;
+import edu.wpi.first.wpilibj.Encoder;
 
 /**
  * This is a demo program showing the use of the CameraServer class. With start
@@ -28,7 +28,7 @@ import edu.wpi.first.wpilibj.networktables.NetworkTable;
 
 public class Robot extends IterativeRobot {
 	
-	//encoder //encoder;
+	Encoder encoder;
 	NetworkTable dashboardTable;
 
 	NetworkTable cameraTable;
@@ -78,8 +78,14 @@ public class Robot extends IterativeRobot {
     	UsbCamera camera = CameraServer.getInstance().startAutomaticCapture();
     	camera.setResolution(240, 180);
     	camera.setFPS(20);
+    	//EncodingType
+    	encoder = new Encoder(1, 2, true, EncodingType.k4X);
+    	encoder.setMaxPeriod(0.1);
+    	encoder.setMinRate(10);
+    	encoder.setDistancePerPulse(1); //??
+    	encoder.setReverseDirection(false);
+    	encoder.setSamplesToAverage(7);
     	
-    	////encoder = new //encoder(1, 2, true, EncodingType.k4X);
 		// CameraServer.getInstance().startAutomaticCapture();
 		/*
 		new Thread(() -> { UsbCamera camera =
@@ -98,8 +104,6 @@ public class Robot extends IterativeRobot {
 		NetworkTable.getTable("SmartDashboard");
 		table = NetworkTable.getTable("SmartDashboard");
 		*/
-    	////encoder.setSamplesToAverage(5);
-    	////encoder.setDistancePerPulse(1.0/360 * scalingFactor//encoder);
 
     	NetworkTable.setServerMode(); 
 		NetworkTable.setTeam(3455); 
@@ -137,6 +141,8 @@ public class Robot extends IterativeRobot {
 
 	public void autonomousInit() {
 		long startAutoTime = System.currentTimeMillis();
+		
+		encoder.reset();
 		
 		finished1 = true;
 		finished2 = false;
@@ -205,21 +211,14 @@ public class Robot extends IterativeRobot {
 		dashboardTable.putNumber("D1 of BLOCK: ", blockd1);
 		dashboardTable.putNumber("D2 of BLOCK: ", blockd2);
 		dashboardTable.putNumber("THETA of BLOCK: ", blockTheta);
-
-		if(!finished1){
-			dashboardTable.putNumber("HEADING w/ OFFSET", imu.getHeading()-offsetIMU);
-			//mod 360 because imu is continuous value
-			if((imu.getHeading()-offsetIMU)%360<90.0){
-				autoTurnSpeed = (90-(imu.getHeading()-offsetIMU)%360)*TURN_CORRECTION+MIN_TURN_LIMIT;
-				tankDrive(-autoTurnSpeed, autoTurnSpeed);
-			}else{
-				tankDrive(0, 0);
-				finished1 = true;
-			}
-		}else if(!finished2){
+		
+		dashboardTable.putNumber("ENCODER VALUE: ", encoder.getDistance());
+		
+		//start of encoder with driving straight
+		if(encoder.getDistance()<2293-180){ //should be around 10 ft
+			//180 is a super sketchy constant
 			leftSpeedAdj = autoStraightSpeed*LEFT_COEFF;
 			rightSpeedAdj = autoStraightSpeed*RIGHT_COEFF;
-	
 			if(imu.getHeading() -offsetIMU - startHeading > IMU_THRESHOLD){
 				adjustVar = Math.abs(imu.getHeading() -offsetIMU - startHeading);
 				rightSpeedAdj -= CORRECTION_MULTIPLIER * adjustVar;
@@ -232,55 +231,92 @@ public class Robot extends IterativeRobot {
 				//robot is driving within acceptable range
 				dashboardTable.putNumber("STRAIGHT LINE CORRECTION: ", 0);
 			}
+			dashboardTable.putNumber("encoder", encoder.getDistance());
 			dashboardTable.putNumber("imu heading: ", imu.getHeading());
 			dashboardTable.putNumber("final left speed: ", leftSpeedAdj);
 			dashboardTable.putNumber("final right speed: ", rightSpeedAdj);
 			dashboardTable.putNumber("current adjust state: ", imu.getHeading() -offsetIMU - startHeading);
 			tankDriveNoThresh(leftSpeedAdj, rightSpeedAdj);
-
-			if(blockTheta!=-3455 && Math.abs(blockd2) < BLOCK_ANGLE_THRESHOLD){
-				tankDriveNoThresh(0.0, 0.0);
-				finished2 = true;
-			}
-		}else if(!finished3){
-			leftSpeedAdj = autoStraightSpeedPrecise*LEFT_COEFF;
-			rightSpeedAdj = autoStraightSpeedPrecise*RIGHT_COEFF;
-	
-			if(imu.getHeading() -offsetIMU - startHeading > IMU_THRESHOLD){
-				adjustVar = Math.abs(imu.getHeading() -offsetIMU - startHeading);
-				rightSpeedAdj -= CORRECTION_MULTIPLIER * adjustVar;
-				dashboardTable.putNumber("STRAIGHT LINE CORRECTION RIGHT: ", rightSpeedAdj);
-			}else if(imu.getHeading() -offsetIMU - startHeading < -IMU_THRESHOLD){
-				adjustVar = Math.abs(imu.getHeading() -offsetIMU - startHeading);
-				leftSpeedAdj -= CORRECTION_MULTIPLIER * adjustVar;
-				dashboardTable.putNumber("STRAIGHT LINE CORRECTION LEFT: ", leftSpeedAdj);
-			}else{
-				//robot is driving within acceptable range
-				dashboardTable.putNumber("STRAIGHT LINE CORRECTION: ", 0);
-			}
-			dashboardTable.putNumber("imu heading: ", imu.getHeading());
-			dashboardTable.putNumber("final left speed: ", leftSpeedAdj);
-			dashboardTable.putNumber("final right speed: ", rightSpeedAdj);
-			dashboardTable.putNumber("current adjust state: ", imu.getHeading() -offsetIMU - startHeading);
-			tankDriveNoThresh(-leftSpeedAdj, -rightSpeedAdj);
-
-			if(blockTheta!=-3455 && Math.abs(blockd2) < BLOCK_ANGLE_THRESHOLD_PRECISE){
-				tankDriveNoThresh(0.0, 0.0);
-				finished3 = true;
-			}
-		}else if(!finished4){
-			dashboardTable.putNumber("HEADING w/ OFFSET", imu.getHeading()-offsetIMU);
-			//mod 360 because imu is continuous value
-			if((imu.getHeading()-offsetIMU)%360<90.0){
-				autoTurnSpeed = (90-(imu.getHeading()-offsetIMU)%360)*TURN_CORRECTION+MIN_TURN_LIMIT;
-				tankDrive(-autoTurnSpeed, autoTurnSpeed);
-			}else{
-				tankDrive(0, 0);
-				finished1 = true;
-			}
+			
 		}else{
-			//all done!
+			tankDriveNoThresh(0, 0);
 		}
+		
+//		if(!finished1){
+//			dashboardTable.putNumber("HEADING w/ OFFSET", imu.getHeading()-offsetIMU);
+//			//mod 360 because imu is continuous value
+//			if((imu.getHeading()-offsetIMU)%360<90.0){
+//				autoTurnSpeed = (90-(imu.getHeading()-offsetIMU)%360)*TURN_CORRECTION+MIN_TURN_LIMIT;
+//				tankDrive(-autoTurnSpeed, autoTurnSpeed);
+//			}else{
+//				tankDrive(0, 0);
+//				finished1 = true;
+//			}
+//		}else if(!finished2){
+//			leftSpeedAdj = autoStraightSpeed*LEFT_COEFF;
+//			rightSpeedAdj = autoStraightSpeed*RIGHT_COEFF;
+//	
+//			if(imu.getHeading() -offsetIMU - startHeading > IMU_THRESHOLD){
+//				adjustVar = Math.abs(imu.getHeading() -offsetIMU - startHeading);
+//				rightSpeedAdj -= CORRECTION_MULTIPLIER * adjustVar;
+//				dashboardTable.putNumber("STRAIGHT LINE CORRECTION RIGHT: ", rightSpeedAdj);
+//			}else if(imu.getHeading() -offsetIMU - startHeading < -IMU_THRESHOLD){
+//				adjustVar = Math.abs(imu.getHeading() -offsetIMU - startHeading);
+//				leftSpeedAdj -= CORRECTION_MULTIPLIER * adjustVar;
+//				dashboardTable.putNumber("STRAIGHT LINE CORRECTION LEFT: ", leftSpeedAdj);
+//			}else{
+//				//robot is driving within acceptable range
+//				dashboardTable.putNumber("STRAIGHT LINE CORRECTION: ", 0);
+//			}
+//			dashboardTable.putNumber("imu heading: ", imu.getHeading());
+//			dashboardTable.putNumber("final left speed: ", leftSpeedAdj);
+//			dashboardTable.putNumber("final right speed: ", rightSpeedAdj);
+//			dashboardTable.putNumber("current adjust state: ", imu.getHeading() -offsetIMU - startHeading);
+//			tankDriveNoThresh(leftSpeedAdj, rightSpeedAdj);
+//
+//			if(blockTheta!=-3455 && Math.abs(blockd2) < BLOCK_ANGLE_THRESHOLD){
+//				tankDriveNoThresh(0.0, 0.0);
+//				finished2 = true;
+//			}
+//		}else if(!finished3){
+//			leftSpeedAdj = autoStraightSpeedPrecise*LEFT_COEFF;
+//			rightSpeedAdj = autoStraightSpeedPrecise*RIGHT_COEFF;
+//	
+//			if(imu.getHeading() -offsetIMU - startHeading > IMU_THRESHOLD){
+//				adjustVar = Math.abs(imu.getHeading() -offsetIMU - startHeading);
+//				rightSpeedAdj -= CORRECTION_MULTIPLIER * adjustVar;
+//				dashboardTable.putNumber("STRAIGHT LINE CORRECTION RIGHT: ", rightSpeedAdj);
+//			}else if(imu.getHeading() -offsetIMU - startHeading < -IMU_THRESHOLD){
+//				adjustVar = Math.abs(imu.getHeading() -offsetIMU - startHeading);
+//				leftSpeedAdj -= CORRECTION_MULTIPLIER * adjustVar;
+//				dashboardTable.putNumber("STRAIGHT LINE CORRECTION LEFT: ", leftSpeedAdj);
+//			}else{
+//				//robot is driving within acceptable range
+//				dashboardTable.putNumber("STRAIGHT LINE CORRECTION: ", 0);
+//			}
+//			dashboardTable.putNumber("imu heading: ", imu.getHeading());
+//			dashboardTable.putNumber("final left speed: ", leftSpeedAdj);
+//			dashboardTable.putNumber("final right speed: ", rightSpeedAdj);
+//			dashboardTable.putNumber("current adjust state: ", imu.getHeading() -offsetIMU - startHeading);
+//			tankDriveNoThresh(-leftSpeedAdj, -rightSpeedAdj);
+//
+//			if(blockTheta!=-3455 && Math.abs(blockd2) < BLOCK_ANGLE_THRESHOLD_PRECISE){
+//				tankDriveNoThresh(0.0, 0.0);
+//				finished3 = true;
+//			}
+//		}else if(!finished4){
+//			dashboardTable.putNumber("HEADING w/ OFFSET", imu.getHeading()-offsetIMU);
+//			//mod 360 because imu is continuous value
+//			if((imu.getHeading()-offsetIMU)%360<90.0){
+//				autoTurnSpeed = (90-(imu.getHeading()-offsetIMU)%360)*TURN_CORRECTION+MIN_TURN_LIMIT;
+//				tankDrive(-autoTurnSpeed, autoTurnSpeed);
+//			}else{
+//				tankDrive(0, 0);
+//				finished1 = true;
+//			}
+//		}else{
+//			//all done!
+//		}
 
 		//CODE TO DRIVE STRAIGHT
 
@@ -322,7 +358,7 @@ public class Robot extends IterativeRobot {
 	}
 
 	public void teleopInit() {
-		//encoder.reset();
+		encoder.reset();
 	}
 
 	/**
@@ -436,7 +472,7 @@ public class Robot extends IterativeRobot {
 				climberMotor.set(0.0);
 			}
 			
-			//table.putNumber("//encoder", //encoder.getDistance());
+			dashboardTable.putNumber("ENCODER VALUE: ", encoder.getDistance());
 			yAxis1 = first.getRawAxis(1);
 			yAxis2 = first.getRawAxis(5);
     		tankDrive(yAxis1, yAxis2);

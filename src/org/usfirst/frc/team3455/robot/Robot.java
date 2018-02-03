@@ -45,6 +45,18 @@ public class Robot extends IterativeRobot {
 	// final int frontRightChannel = 3;
 	// final int rearRightChannel = 1;
 
+	
+	double startHeading;
+	final double CORRECTION_MULTIPLIER = 0.075;
+	final double LEFT_COEFF = 0.4;
+	final double RIGHT_COEFF = 1.0;
+	final double CORRECTION_ADD = 0.0;
+	final double IMU_THRESHOLD = 0.5;
+	boolean errorIMU = false;
+	double leftSpeedAdjust,rightSpeedAdjust;
+	double offsetIMU;
+	
+	
 	Talon frontLeft;
 	Talon frontRight;
 	Talon backLeft;
@@ -112,7 +124,7 @@ public class Robot extends IterativeRobot {
 
 		cameraTable = NetworkTable.getTable("PIcamera");
     	
-    	first = new Joystick(1);
+x    	first = new Joystick(1);
     	second = new Joystick(0);
 
 		frontLeft = new Talon(5);
@@ -134,10 +146,7 @@ public class Robot extends IterativeRobot {
 		
 	}
 	
-	double offsetIMU = 0.0;
-	boolean errorIMU = false;
-	double startHeading = 0.0;
-	final double IMU_THRESHOLD = 0.5;
+
 
 	public void autonomousInit() {
 		long startAutoTime = System.currentTimeMillis();
@@ -159,6 +168,7 @@ public class Robot extends IterativeRobot {
 //				break readyIMU;
 //			}
 //		}
+		
 		if(!errorIMU){
 			dashboardTable.putNumber("IMU READY", 0);
 			offsetIMU = imu.getHeading();
@@ -169,14 +179,14 @@ public class Robot extends IterativeRobot {
 	}
 	
 	//might make it scale logarithmically in the future
-	final double CORRECTION_MULTIPLIER = 0.075;
+	/*final double CORRECTION_MULTIPLIER = 0.075;
 	final double LEFT_COEFF = 0.4;
 	final double RIGHT_COEFF = 1.0;
 	final double CORRECTION_ADD = 0.0;
 	double autoStraightSpeed = -0.6; //-0.4
 	double autoStraightSpeedPrecise = -0.4; //-0.4
 	double leftSpeedAdj, rightSpeedAdj;
-	double adjustVar;
+	double adjustVar;*/
 
 	final double TURN_CORRECTION = 0.005;
 	double autoTurnSpeed = 0.4;
@@ -196,6 +206,35 @@ public class Robot extends IterativeRobot {
 	boolean finished2 = false;
 	boolean finished3 = false;
 	boolean finished4 = false;
+	
+
+
+	
+	public void goStraight(double Speed,double offsetIMU,double startHeading){
+
+		double autoStraightSpeed = Speed; //-0.4
+		double autoStraightSpeedPrecise = Speed + 0.2; //-0.4
+		double adjustVar;
+		double autoTurnSpeed = 0.4;
+		double MIN_TURN_LIMIT = 0.3;
+		double leftSpeedAdjust = autoStraightSpeed*LEFT_COEFF;
+		double rightSpeedAdjust = autoStraightSpeed*RIGHT_COEFF;
+		//double offsetIMU = offset;
+		//double startHeading;
+		
+		if(imu.getHeading() -offsetIMU - startHeading > IMU_THRESHOLD){
+			adjustVar = Math.abs(imu.getHeading() -offsetIMU - startHeading);
+			rightSpeedAdjust -= CORRECTION_MULTIPLIER * adjustVar;
+			dashboardTable.putNumber("STRAIGHT LINE CORRECTION RIGHT: ", rightSpeedAdjust);
+		}else if(imu.getHeading() -offsetIMU - startHeading < -IMU_THRESHOLD){
+			adjustVar = Math.abs(imu.getHeading() -offsetIMU - startHeading);
+			leftSpeedAdjust -= CORRECTION_MULTIPLIER * adjustVar;
+			dashboardTable.putNumber("STRAIGHT LINE CORRECTION LEFT: ", leftSpeedAdjust);
+		}else{
+			//robot is driving within acceptable range
+			dashboardTable.putNumber("STRAIGHT LINE CORRECTION: ", 0);
+		}
+	}
 
 	public void autonomousPeriodic() {
 		System.out.println("finished 1: "+finished1);
@@ -217,26 +256,14 @@ public class Robot extends IterativeRobot {
 		//start of encoder with driving straight
 		if(encoder.getDistance()<2293-180){ //should be around 10 ft
 			//180 is a super sketchy constant
-			leftSpeedAdj = autoStraightSpeed*LEFT_COEFF;
-			rightSpeedAdj = autoStraightSpeed*RIGHT_COEFF;
-			if(imu.getHeading() -offsetIMU - startHeading > IMU_THRESHOLD){
-				adjustVar = Math.abs(imu.getHeading() -offsetIMU - startHeading);
-				rightSpeedAdj -= CORRECTION_MULTIPLIER * adjustVar;
-				dashboardTable.putNumber("STRAIGHT LINE CORRECTION RIGHT: ", rightSpeedAdj);
-			}else if(imu.getHeading() -offsetIMU - startHeading < -IMU_THRESHOLD){
-				adjustVar = Math.abs(imu.getHeading() -offsetIMU - startHeading);
-				leftSpeedAdj -= CORRECTION_MULTIPLIER * adjustVar;
-				dashboardTable.putNumber("STRAIGHT LINE CORRECTION LEFT: ", leftSpeedAdj);
-			}else{
-				//robot is driving within acceptable range
-				dashboardTable.putNumber("STRAIGHT LINE CORRECTION: ", 0);
-			}
+
+			goStraight(-0.6,0.0,0.0);
 			dashboardTable.putNumber("encoder", encoder.getDistance());
 			dashboardTable.putNumber("imu heading: ", imu.getHeading());
-			dashboardTable.putNumber("final left speed: ", leftSpeedAdj);
-			dashboardTable.putNumber("final right speed: ", rightSpeedAdj);
+			dashboardTable.putNumber("final left speed: ", leftSpeedAdjust);
+			dashboardTable.putNumber("final right speed: ", rightSpeedAdjust);
 			dashboardTable.putNumber("current adjust state: ", imu.getHeading() -offsetIMU - startHeading);
-			tankDriveNoThresh(leftSpeedAdj, rightSpeedAdj);
+			tankDriveNoThresh(leftSpeedAdjust, rightSpeedAdjust);
 			
 		}else{
 			tankDriveNoThresh(0, 0);

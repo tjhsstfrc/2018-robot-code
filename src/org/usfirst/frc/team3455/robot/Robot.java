@@ -1,5 +1,7 @@
 package org.usfirst.frc.team3455.robot;
 
+import org.usfirst.frc.team3455.robot.commandgroups.*;
+
 import org.opencv.core.Mat;
 import org.opencv.imgproc.Imgproc;
 import org.usfirst.frc.team3455.robot.commands.DriveForwardAuto;
@@ -20,6 +22,8 @@ import edu.wpi.first.wpilibj.SerialPort;
 import edu.wpi.first.wpilibj.command.Command;
 import edu.wpi.first.wpilibj.command.Scheduler;
 import edu.wpi.first.wpilibj.networktables.NetworkTable;
+import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 public class Robot extends IterativeRobot {
 	public static Chassis chassis = new Chassis();
@@ -31,6 +35,7 @@ public class Robot extends IterativeRobot {
 	Command autonomousCommand;
 	Command teleopCommand;
 	public static String gameData = "";
+	SendableChooser autoChooser;
 
 	public long startTime;
 	public boolean firstRun = false;
@@ -50,36 +55,60 @@ public class Robot extends IterativeRobot {
 		chassis.init();
 		intake.init();
 		elevator.init();
-		// = new AutonomousGroup();
+		
 		teleopCommand = new TankDriveTeleop();
+		autoChooser = new SendableChooser();
+		autoChooser.addDefault("LEFT", "LEFT");
+		autoChooser.addDefault("CENTER", "CENTER");
+		autoChooser.addDefault("RIGHT", "RIGHT");
+		SmartDashboard.putData("Autonomous position chooser", autoChooser);
 	}
 
 	public void autonomousInit() {
-
-		////
-
-		////
-		/*
+		String position = (String) autoChooser.getSelected();
 		this.gameData = DriverStation.getInstance().getGameSpecificMessage();
-		if (this.gameData.charAt(0) == 'R') {
-			autonomousCommand = new AutonomousGroupRightSwitch();
-		} else {
-			autonomousCommand = new AutonomousGroupNoSwitch();
-			// autonomousCommand = new AutonomousGroupLeftSwitch();
+		if(position.equals("CENTER")) {
+			if(this.gameData.charAt(0) == 'L') {
+				autonomousCommand = new AutoCenterSwitchLeft();
+			} else if(this.gameData.charAt(0) == 'R') {
+				autonomousCommand = new AutoCenterSwitchRight();
+			} 
+		} else if(position.equals("LEFT")) {
+			if(this.gameData.charAt(0) == 'L') {
+				if(this.gameData.charAt(1) == 'L') {
+					autonomousCommand = new AutoLeftSwitchLeftScaleLeft();
+				} else if(this.gameData.charAt(1) == 'R') {
+					autonomousCommand = new AutoLeftSwitchLeft();
+				} 
+			} else if(this.gameData.charAt(0) == 'R') {
+				if(this.gameData.charAt(1) == 'L') {
+					autonomousCommand = new AutoLeftSwitchRightScaleLeft(); //AutoLeftSwitchRight
+				} else if(this.gameData.charAt(1) == 'R') {
+					autonomousCommand = new AutoLeftSwitchRight();
+				} 
+			} 
+		} else if(position.equals("RIGHT")) {
+			if(this.gameData.charAt(0) == 'L') {
+				if(this.gameData.charAt(1) == 'L') {
+					autonomousCommand = new AutoRightSwitchLeft();
+				} else if(this.gameData.charAt(1) == 'R') {
+					autonomousCommand = new AutoRightSwitchLeftScaleRight();
+				} 
+			} else if(this.gameData.charAt(0) == 'R') {
+				if(this.gameData.charAt(1) == 'L') {
+					autonomousCommand = new AutoRightSwitchRight(); //AutoRightSwitchRight
+				} else if(this.gameData.charAt(1) == 'R') {
+					autonomousCommand = new AutoRightSwitchRightScaleRight();
+				} 
+			} 
 		}
-		*/
-
-		// autonomousCommand = new AutonomousGroupNoSwitch();
-
 		Debugger.debug("GameData", gameData);
 		if (autonomousCommand != null) {
 			autonomousCommand.start();
 		}
-		firstRun = false;
 	}
 
 	public void autonomousPeriodic() {
-		// addSequential(autonomousCommand);
 		Scheduler.getInstance().run();
 	}
 

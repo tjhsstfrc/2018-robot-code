@@ -11,15 +11,13 @@ import edu.wpi.first.wpilibj.command.CommandGroup;
 /**
  * 
  */
-public class AutoRightSwitchRightScaleRight extends CommandGroup { //START POSITION: CENTER || GOAL: SWITCH
+public class AutoRightSwitchRightScaleRight extends CommandGroup {
 	
     public AutoRightSwitchRightScaleRight() {
     	requires(Robot.chassis);
     	requires(Robot.elevator);
     	requires(Robot.intake);
-
-    	addSequential(new DriveForwardAuto(1.75,0.5, true)); //move forward to switch from center position
-		addSequential(new ManipulateTilt(500, -0.5)); //tilt intake down to switch
-		addSequential(new ManipulateBlock(2500, -0.5)); //shoot block out
+    	
+    	
     }
 }

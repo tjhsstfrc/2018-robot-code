@@ -20,9 +20,9 @@ public class AutoLeftSwitchLeft extends CommandGroup {
     	addSequential(new Sleep(250));
     	addSequential(new TurnPointAuto(90, 0.35)); //turn toward the switch
     	addSequential(new Sleep(250));
-    	addSequential(new DriveForwardEncoderAuto(12*1, 0.35)); //drive toward the switch
+    	addSequential(new DriveForwardEncoderAuto(12*1, 0.35)); //drive toward the switch //TODO get the actual value for this
     	addSequential(new Sleep(250));
-    	addParallel(new ManipulateTilt(500, -0.5)); //tilt intake down to switch
+    	addSequential(new ManipulateTilt(500, -0.5)); //tilt intake down to switch
     	addSequential(new Sleep(250));
     	addSequential(new ManipulateBlock(2500, -0.5)); //shoot out block
     }

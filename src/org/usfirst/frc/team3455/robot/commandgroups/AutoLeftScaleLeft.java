@@ -19,9 +19,9 @@ public class AutoLeftScaleLeft extends CommandGroup {
     	addParallel(new MoveElevatorToMaxPosition(1.0));
     	addSequential(new DriveForwardEncoderAuto(12*Constants.DIST_TO_SCALE, 0.5)); //drive to the scale
     	addSequential(new Sleep(250));
-    	addSequential(new TurnPointAuto(25, 0.35)); //turn toward the scale
+    	addSequential(new TurnPointAuto(25, 0.35)); //turn toward the scale //TODO get the actual value for this
     	addSequential(new Sleep(250));
-    	addParallel(new ManipulateTilt(500, -0.5)); //tilt intake down to scale
+    	addSequential(new ManipulateTilt(500, -0.5)); //tilt intake down to scale
     	addSequential(new Sleep(250));
     	addSequential(new ManipulateBlock(2500, -0.5)); //shoot out block
     }

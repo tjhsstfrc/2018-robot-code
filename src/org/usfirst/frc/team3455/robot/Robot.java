@@ -122,9 +122,9 @@ public class Robot extends IterativeRobot {
 
 		Debugger.debug("limit switch", elevator.getLimitSwitch());
 		Debugger.debug("imu value", chassis.getHeadingIMU());
-		Debugger.debug("left drive encoder", chassis.flDrive.getSensorCollection().getQuadraturePosition());
-		Debugger.debug("right drive encoder", chassis.frDrive.getSensorCollection().getQuadraturePosition());
-
+		//Debugger.debug("left drive encoder", chassis.flDrive.getSensorCollection().getQuadraturePosition());
+		//Debugger.debug("right drive encoder", chassis.frDrive.getSensorCollection().getQuadraturePosition());
+		Debugger.debug("encoder_value", dashboardTable.getNumber("encoder_value", 0));
 		Scheduler.getInstance().run();
 	}
 }
